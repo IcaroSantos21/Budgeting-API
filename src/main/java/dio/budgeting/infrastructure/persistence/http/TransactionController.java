@@ -1,5 +1,8 @@
 package dio.budgeting.infrastructure.persistence.http;
 
+import dio.budgeting.application.SumTransactionsAllUseCase;
+import dio.budgeting.application.SumTransactionsByCategoryUseCase;
+import dio.budgeting.infrastructure.persistence.http.response.SumResponse;
 import org.springframework.http.HttpHeaders;
 import com.google.genai.Client;
 import dio.budgeting.application.ListTransactionsByCategoryUseCase;
@@ -34,6 +37,8 @@ public class TransactionController {
 
     private final PersistTransactionUseCase persistTransactionUseCase;
     private final ListTransactionsByCategoryUseCase listTransactionsByCategoryUseCase;
+    private final SumTransactionsByCategoryUseCase sumTransactionsByCategoryUseCase;
+    private final SumTransactionsAllUseCase sumTransactionsAllUseCase;
 
     public TransactionController(PersistTransactionUseCase persistTransactionUseCase,
                                  ListTransactionsByCategoryUseCase listTransactionsByCategoryUseCase,
@@ -41,11 +46,13 @@ public class TransactionController {
                                  AudioTranscriptionService audioTranscriptionService,
                                  @Value("classpath:prompts/system-message.st") Resource systemPrompt,
                                  ChatClient.Builder chatClientBuilder,
-                                 Client genAiClient) throws IOException {
+                                 Client genAiClient, SumTransactionsByCategoryUseCase sumTransactionsByCategoryUseCase, SumTransactionsAllUseCase sumTransactionsAllUseCase) throws IOException {
         this.persistTransactionUseCase = persistTransactionUseCase;
         this.listTransactionsByCategoryUseCase = listTransactionsByCategoryUseCase;
         this.audioSpeechService = audioSpeechService;
         this.audioTranscriptionService = audioTranscriptionService;
+        this.sumTransactionsByCategoryUseCase = sumTransactionsByCategoryUseCase;
+        this.sumTransactionsAllUseCase = sumTransactionsAllUseCase;
         this.chatClient = chatClientBuilder
                 .defaultSystem(systemPrompt.getContentAsString(Charset.defaultCharset()))
                 .defaultTools(persistTransactionUseCase, listTransactionsByCategoryUseCase)
@@ -81,5 +88,17 @@ public class TransactionController {
                                 .build()
                                 .toString())
                 .body(resource);
+    }
+
+    @GetMapping("/total")
+    @ResponseStatus(HttpStatus.OK)
+    public SumResponse sumTotal() {
+        return SumResponse.from(sumTransactionsAllUseCase.execute());
+    }
+
+    @GetMapping("/{category}/total")
+    @ResponseStatus(HttpStatus.OK)
+    public SumResponse sumByCategory(@PathVariable Category category) {
+        return SumResponse.from(sumTransactionsByCategoryUseCase.execute(category));
     }
 }
