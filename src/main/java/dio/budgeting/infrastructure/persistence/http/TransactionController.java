@@ -1,8 +1,10 @@
 package dio.budgeting.infrastructure.persistence.http;
 
-import dio.budgeting.application.SumTransactionsAllUseCase;
+import dio.budgeting.application.SumAllTransactionsUseCase;
 import dio.budgeting.application.SumTransactionsByCategoryUseCase;
 import dio.budgeting.infrastructure.persistence.http.response.SumResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import com.google.genai.Client;
 import dio.budgeting.application.ListTransactionsByCategoryUseCase;
@@ -38,7 +40,9 @@ public class TransactionController {
     private final PersistTransactionUseCase persistTransactionUseCase;
     private final ListTransactionsByCategoryUseCase listTransactionsByCategoryUseCase;
     private final SumTransactionsByCategoryUseCase sumTransactionsByCategoryUseCase;
-    private final SumTransactionsAllUseCase sumTransactionsAllUseCase;
+    private final SumAllTransactionsUseCase sumTransactionsAllUseCase;
+
+    private static final Logger log = LoggerFactory.getLogger(TransactionController.class);
 
     public TransactionController(PersistTransactionUseCase persistTransactionUseCase,
                                  ListTransactionsByCategoryUseCase listTransactionsByCategoryUseCase,
@@ -46,16 +50,24 @@ public class TransactionController {
                                  AudioTranscriptionService audioTranscriptionService,
                                  @Value("classpath:prompts/system-message.st") Resource systemPrompt,
                                  ChatClient.Builder chatClientBuilder,
-                                 Client genAiClient, SumTransactionsByCategoryUseCase sumTransactionsByCategoryUseCase, SumTransactionsAllUseCase sumTransactionsAllUseCase) throws IOException {
+                                 Client genAiClient,
+                                 SumTransactionsByCategoryUseCase sumTransactionsByCategoryUseCase,
+                                 SumAllTransactionsUseCase sumAllTransactionsUseCase) throws IOException
+    {
+
         this.persistTransactionUseCase = persistTransactionUseCase;
         this.listTransactionsByCategoryUseCase = listTransactionsByCategoryUseCase;
         this.audioSpeechService = audioSpeechService;
         this.audioTranscriptionService = audioTranscriptionService;
         this.sumTransactionsByCategoryUseCase = sumTransactionsByCategoryUseCase;
-        this.sumTransactionsAllUseCase = sumTransactionsAllUseCase;
+        this.sumTransactionsAllUseCase = sumAllTransactionsUseCase;
         this.chatClient = chatClientBuilder
                 .defaultSystem(systemPrompt.getContentAsString(Charset.defaultCharset()))
-                .defaultTools(persistTransactionUseCase, listTransactionsByCategoryUseCase)
+                .defaultTools(
+                        persistTransactionUseCase,
+                        listTransactionsByCategoryUseCase,
+                        sumAllTransactionsUseCase,
+                        sumTransactionsByCategoryUseCase)
                 .build();
     }
 
@@ -77,14 +89,21 @@ public class TransactionController {
 
     @PostMapping(value = "/ai", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = "audio/ogg")
     public ResponseEntity<Resource> transcribe(@RequestParam("file") MultipartFile file) throws IOException {
-        var userMessage = audioTranscriptionService.transcribe(file);
-        var result = chatClient.prompt().user(userMessage).call().content();
-        var resource = new ByteArrayResource(audioSpeechService.synthesize(result));
+        log.info("1 - Recebi o arquivo");
 
+        log.info("1.1 - Antes da Transcrição");
+        var userMessage = audioTranscriptionService.transcribe(file);
+        log.info("2 - Transcrito para {}", userMessage);
+
+        var result = chatClient.prompt().user(userMessage).call().content();
+        log.info("3 - Resultado do chat: {}", result);
+
+        var resource = new ByteArrayResource(audioSpeechService.synthesize(result));
+        log.info("4 - Audio gerado");
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment()
-                                .filename("audio.ogg")
+                                .filename("response.ogg")
                                 .build()
                                 .toString())
                 .body(resource);

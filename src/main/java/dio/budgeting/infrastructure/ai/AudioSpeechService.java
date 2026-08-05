@@ -5,6 +5,8 @@ import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.PrebuiltVoiceConfig;
 import com.google.genai.types.SpeechConfig;
 import com.google.genai.types.VoiceConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,8 @@ public class AudioSpeechService {
     private final Client genAiClient;
     private final String voiceName;
     private final String ttsModel;
+
+    private static final Logger log = LoggerFactory.getLogger(AudioSpeechService.class);
 
     public AudioSpeechService(Client genAiClient,
                               @Value("${app.ai.tts.voice}") String voiceName,
@@ -39,15 +43,23 @@ public class AudioSpeechService {
                 .speechConfig(speechConfig)
                 .build();
 
-        var response = genAiClient.models.generateContent(ttsModel, text, config);
+        try {
+            log.info("Model: {}", ttsModel);
+            log.info("Voice: {}", voiceName);
+            log.info("Text: {}", text);
+            var response = genAiClient.models.generateContent(ttsModel, text, config);
 
-        byte[] rawPcm = response.candidates().get().get(0)
-                .content().get()
-                .parts().get().get(0)
-                .inlineData().get()
-                .data().get();
+            byte[] rawPcm = response.candidates().get().get(0)
+                    .content().get()
+                    .parts().get().get(0)
+                    .inlineData().get()
+                    .data().get();
 
-        return wrapPcmAsWav(rawPcm, 24000, 1, 16);
+            return wrapPcmAsWav(rawPcm, 24000, 1, 16);
+        } catch (Exception err) {
+            log.error("Error synthesizing speech: {}", err.getMessage(), err);
+            throw err;
+        }
     }
 
     private byte[] wrapPcmAsWav(byte[] pcmData, int sampleRate, int channels, int bitsPerSample) {
