@@ -90,6 +90,15 @@ quanto a tool da IA, já que os dois convergem pro mesmo construtor. Um `@RestCo
 o roteamento HTTP de erros), todos mockados e sem dependência de rede ou banco. Configurei um workflow do GitHub que roda esses testes 
 automaticamente em todo push/PR.
 
+## Nota sobre uma tentativa não concluída
+
+Tentei configurar o Spring REST Docs para gerar a documentação da API automaticamente a partir dos testes (em vez de mantê-la manualmente em Markdown). 
+Encontrei uma incompatibilidade binária real entre a versão atual do Spring REST Docs 4.0 (feita para Spring Framework 7/Boot 4) e o plugin Asciidoctor do 
+Gradle disponível no momento: fixar a versão do AsciidoctorJ para satisfazer o `spring-restdocs-asciidoctor` quebra o próprio plugin do Gradle, e vice-versa. 
+Decidi reverter e manter a documentação em Markdown (`API_DOCUMENTATION.md`), já que essa combinação específica de ferramentas ainda não amadureceu o suficiente 
+para uso sem atrito. Registro isso aqui como parte do processo — nem toda tentativa de melhoria vira código, e saber recuar de uma ferramenta instável também é 
+uma decisão técnica válida.
+
 ## O que aprendi durante o desafio
 - **Function calling na prática**: como o Spring AI conecta a saída de um LLM a métodos Java reais via `@Tool`, incluindo como exceções 
 lançadas dentro de uma tool são automaticamente devolvidas ao modelo como contexto, sem precisar de tratamento manual.
