@@ -1,4 +1,6 @@
 # Budgetintg API
+[![Tests](https://github.com/IcaroSantos21/Budgeting-API/actions/workflows/tests.yml/badge.svg)](https://github.com/IcaroSantos21/Budgeting-API/actions/workflows/tests.yml)
+
 Projeto desenvolvido como parte do Desafio de Projeto do módulo **Spring AI** da [trilha Java Spring Boot da DIO](https://github.com/digitalinnovationone/dio-spring-boot-learning-track). A proposta original do desafio era explorar os recursos do Spring AI (chat, function calling, transcrição de áudio e text-to-speech); a partir dela, construí um assistente financeiro pessoal controlado por voz
 
 ## O que o projeto faz
