@@ -4,15 +4,21 @@
 
 Assistente financeiro pessoal que funciona por voz ou por interface web. A pessoa diz algo como "gastei 50 reais no mercado" e o sistema registra o gasto, consulta totais e responde em áudio.
 
-O projeto nasceu do Desafio de Projeto do módulo Spring AI da [trilha Java Spring Boot da DIO](https://github.com/digitalinnovationone/dio-spring-boot-learning-track), que propõe explorar chat, function calling, transcrição de áudio e text-to-speech. A partir dessa base, foi ampliado com regras de domínio, testes, CI e um front-end em Angular.
+O projeto nasceu do Desafio de Projeto do módulo Spring AI da [trilha Java Spring Boot da DIO](https://github.com/digitalinnovationone/dio-spring-boot-learning-track), que propõe explorar chat, function calling, transcrição de áudio e text-to-speech. A partir dessa base, foi ampliado com regras de domínio, testes, CI, um front-end em Angular e uma infraestrutura Docker para executar toda a aplicação em conjunto.
 
 ## Visão geral
+
+O projeto é composto por três serviços:
+
+- **Frontend:** aplicação Angular servida pelo Nginx.
+- **API:** aplicação Spring Boot responsável pelas regras de negócio, REST e integração com IA.
+- **Banco de dados:** MySQL persistido em um volume Docker.
 
 Fluxo por voz:
 
 1. O áudio é enviado para a API e transcrito para texto.
 2. A IA interpreta a intenção: registrar um gasto, consultar o total ou consultar o total de uma categoria.
-3. A ação correspondente é executada no banco de dados (via function calling).
+3. A ação correspondente é executada no banco de dados via function calling.
 4. A resposta volta em áudio, em tom de conversa.
 
 O mesmo conjunto de operações também está disponível por REST/JSON, usado pelo front-end e útil para automações.
@@ -20,21 +26,30 @@ O mesmo conjunto de operações também está disponível por REST/JSON, usado p
 ## Tecnologias
 
 **Back-end**
+
 - Java 21 e Spring Boot 4
 - Spring AI `2.0.0-M4` com Google GenAI (Gemini): chat, function calling, transcrição e text-to-speech
-- Spring Data JPA e MySQL (Docker Compose, iniciado automaticamente pelo Spring Boot)
+- Spring Data JPA e MySQL
 - JUnit 5, Mockito e AssertJ
 - GitHub Actions para CI
 - Lombok
 
 **Front-end**
+
 - Angular 22, standalone components, sem Zone.js (estado com signals)
 - Reactive Forms e roteamento por rotas
 - Tailwind CSS v4, com tema claro e escuro
+- Nginx para servir a aplicação e encaminhar as requisições para a API
+
+**Infraestrutura**
+
+- Docker
+- Docker Compose
+- Docker volume para persistência do MySQL
 
 ## Estrutura do repositório
 
-```
+```text
 .
 ├── src/main/java/dio/budgeting
 │   ├── application            # casos de uso e inputs
@@ -42,46 +57,110 @@ O mesmo conjunto de operações também está disponível por REST/JSON, usado p
 │   └── infrastructure
 │       ├── ai                 # transcrição e síntese de voz
 │       ├── config             # configuração web (CORS)
-│       └── persistence        # repositórios JPA e controllers HTTP
+│       └── persistence         # repositórios JPA e controllers HTTP
 ├── src/test                   # testes unitários e de integração
 ├── frontend                   # aplicação Angular
+│   ├── src
+│   ├── Dockerfile
+│   └── nginx.conf
 ├── API_DOCUMENTATION.md       # referência completa dos endpoints
-└── docker-compose.yaml        # MySQL
+├── Dockerfile                 # imagem da API
+├── compose.yaml               # API, frontend e MySQL
+├── .dockerignore
+└── .env.example               # exemplo das variáveis de ambiente
 ```
 
 ## Como executar
 
 ### Pré-requisitos
 
-- Java 21
-- Docker (banco de dados)
-- Node.js 22.22.3 ou superior (apenas para o front-end)
-- Uma chave de API do Google GenAI ([AI Studio](https://aistudio.google.com) ou [Google Cloud Console](https://console.cloud.google.com))
+É necessário ter apenas:
 
-### Back-end
+- Docker com Docker Compose
+- Uma chave de API do Google GenAI ([AI Studio](https://aistudio.google.com) ou [Google Cloud Console](https://console.cloud.google.com)) para utilizar os recursos de IA por voz
 
-```bash
-export GOOGLE_GENAI_API_KEY=sua_chave_aqui
-./gradlew bootRun
-```
+Não é necessário instalar Java, Gradle, Node.js, Angular ou MySQL na máquina para executar a aplicação pelo Docker Compose.
 
-O Spring Boot sobe o container do MySQL sozinho (`spring-boot-docker-compose`), então não é preciso rodar `docker compose up`. A API fica em `http://localhost:8080`.
+### 1. Configure a chave do Google GenAI
 
-> **Cota da API:** o tier gratuito do Google GenAI tem limites baixos, às vezes cerca de 20 requisições por dia por modelo, com reset por volta das 04:00 no horário de Brasília. Um erro `429` costuma ser isso, e não um bug. Erros `503` indicam instabilidade momentânea do lado do Google, e o Spring AI já refaz a chamada automaticamente.
-
-### Front-end
-
-Com a API rodando, em outro terminal:
+Na raiz do projeto, copie o arquivo de exemplo:
 
 ```bash
-cd frontend
-npm install
-npx ng serve
+cp .env.example .env
 ```
 
-A interface abre em `http://localhost:4200`. A URL da API está em `frontend/src/environments/environment.ts`.
+Depois edite o `.env`:
 
-O CORS da API libera a origem `http://localhost:4200` para `GET` e `POST` (`infrastructure/config/WebConfig.java`). Para hospedar o front-end em outro endereço, ajuste essa classe.
+```env
+GOOGLE_GENAI_API_KEY=sua_chave_aqui
+```
+
+A chave é utilizada pelo serviço da API para os recursos de IA.
+
+> Sem uma chave válida, a aplicação pode subir normalmente, mas o fluxo por voz/IA não funcionará.
+
+### 2. Suba toda a aplicação
+
+Na raiz do projeto:
+
+```bash
+docker compose up --build
+```
+
+Esse comando cria e inicia:
+
+```text
+budgeting-app
+├── database  → MySQL
+├── api       → Spring Boot
+└── web       → Angular + Nginx
+```
+
+Depois, acesse:
+
+```text
+http://localhost:8080
+```
+
+O frontend e a API são disponibilizados pela mesma origem. O Nginx encaminha as requisições para a API internamente, portanto não é necessário configurar CORS para o acesso normal pela interface.
+
+### Executar em segundo plano
+
+Se preferir liberar o terminal:
+
+```bash
+docker compose up --build -d
+```
+
+Para acompanhar os logs:
+
+```bash
+docker compose logs -f
+```
+
+Para acompanhar apenas a API:
+
+```bash
+docker compose logs -f api
+```
+
+### Parar a aplicação
+
+Para parar e remover os containers:
+
+```bash
+docker compose down
+```
+
+O volume do MySQL **não é removido** por esse comando. Os dados ficam armazenados no volume Docker `transaction-data`.
+
+Para subir novamente:
+
+```bash
+docker compose up -d
+```
+
+> **Atenção:** `docker compose down -v` também remove os volumes. Não use esse comando se quiser preservar os dados do banco.
 
 ## Interface web
 
@@ -112,11 +191,23 @@ Referência completa, com exemplos de requisição e resposta, em [`API_DOCUMENT
 | `POST` | `/api/transcribe` | Transcrição de áudio isolada |
 | `POST` | `/api/synthesize` | Síntese de voz isolada |
 
-Categorias válidas: `GROCERIES`, `PHARMA` e `AUTO`.
+Categorias válidas:
 
-O campo `amount` é um inteiro em **centavos**: `5000` equivale a R$ 50,00.
+```text
+GROCERIES
+PHARMA
+AUTO
+```
+
+O campo `amount` é um inteiro em **centavos**:
+
+```text
+5000 = R$ 50,00
+```
 
 ### Exemplos
+
+Os exemplos abaixo podem ser executados com a aplicação em funcionamento.
 
 Criar e consultar por REST (não consome cota de IA):
 
@@ -140,13 +231,48 @@ curl -X POST http://localhost:8080/transactions/ai \
 
 Grave algo como "gastei 30 reais no mercado" ou "quanto eu já gastei no total" e ouça o `response.ogg`.
 
+## Banco de dados e persistência
+
+O MySQL é executado pelo serviço `database` do Docker Compose.
+
+Os dados são armazenados no volume:
+
+```text
+transaction-data
+```
+
+Isso significa que recriar os containers não apaga os dados do banco:
+
+```bash
+docker compose down
+docker compose up -d
+```
+
+Os dados continuam disponíveis porque o volume permanece.
+
+Para remover deliberadamente os containers **e** os dados persistidos:
+
+```bash
+docker compose down -v
+```
+
 ## Testes
+
+Os testes podem ser executados localmente com:
 
 ```bash
 ./gradlew test
 ```
 
-Roda os testes unitários (domínio, casos de uso e tratamento de erros HTTP). São rápidos, sem rede e sem gastar cota de API. As classes de integração, com sufixo `IT`, ficam fora desse comando de propósito porque dependem de chamadas reais ao Google GenAI e rodam só manualmente. O mesmo `./gradlew test` roda no GitHub Actions a cada push e pull request para a `main`.
+Esse comando roda os testes unitários (domínio, casos de uso e tratamento de erros HTTP). São rápidos, sem rede e sem gastar cota de API.
+
+As classes de integração, com sufixo `IT`, ficam fora desse comando de propósito porque dependem de chamadas reais ao Google GenAI e rodam só manualmente.
+
+O mesmo `./gradlew test` roda no GitHub Actions a cada push e pull request para a `main`.
+
+## Cota da API
+
+O tier gratuito do Google GenAI possui limites de utilização. Um erro `429` normalmente indica que o limite de requisições foi atingido. Erros `503` indicam instabilidade momentânea do lado do Google, e o Spring AI já refaz a chamada automaticamente.
 
 ## Decisões de projeto
 
@@ -157,9 +283,11 @@ Roda os testes unitários (domínio, casos de uso e tratamento de erros HTTP). S
 - **Testes separados por custo.** Unitários rodam em todo push. Integração, que gasta cota de API, roda só sob demanda.
 - **Documentação em Markdown.** Foi tentado o Spring REST Docs, mas há uma incompatibilidade binária entre o REST Docs 4.0 (Spring Framework 7 / Boot 4) e o plugin Asciidoctor do Gradle disponível: fixar a versão do AsciidoctorJ para um quebra o outro. A documentação ficou em `API_DOCUMENTATION.md`.
 - **Front-end sem Zone.js.** O projeto Angular usa o modelo padrão atual, sem Zone.js. Por isso todo estado que muda depois de uma chamada assíncrona (HTTP, gravação de áudio) é um signal, senão a tela não atualiza.
+- **Aplicação containerizada.** Frontend, API e banco são executados em serviços separados pelo Docker Compose. O Nginx serve o Angular e encaminha as requisições da aplicação para a API.
+- **Banco persistente.** O MySQL utiliza o volume `transaction-data`, permitindo recriar os containers sem perder os dados armazenados.
 
 ## Próximos passos
 
 - Layout responsivo (a barra lateral hoje é fixa).
 - Total por categoria no dashboard do front-end.
-- Reaproveitar a arquitetura em outros domínios de registro e consulta por voz, como um assistente de estudos (`StudySession` no lugar de `Transaction`, com o mesmo fluxo de transcrição, tool calling e síntese de voz).
+- Reaproveitar a arquitetura em outros domínios de registro e consulta por voz, como um assistente de estudos (`StudySession` no lugar de `Transaction`, com o mesmo fluxo de transcrição, tool calling e síntese).
