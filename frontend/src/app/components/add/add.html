@@ -1,0 +1,30 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <label>
+    Descrição
+    <input type="text" formControlName="description" />
+  </label>
+
+  <label>
+    Categoria
+    <select formControlName="category">
+      @for (cat of categories; track cat) {
+        <option [value]="cat">{{ cat }}</option>
+      }
+    </select>
+  </label>
+
+  <label>
+    Valor (R$)
+    <input type="number" step="0.01" formControlName="amountInReais" />
+  </label>
+
+  <button type="submit" [disabled]="form.invalid">Adicionar</button>
+</form>
+
+@if (success()) {
+  <p>Transação criada com sucesso!</p>
+}
+
+@if (error()) {
+  <p>{{ error() }}</p>
+}

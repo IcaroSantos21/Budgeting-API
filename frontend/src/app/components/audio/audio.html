@@ -1,0 +1,17 @@
+@if (error()) {
+  <p>{{ error() }}</p>
+}
+
+@if (!recording()) {
+  <button (click)="startRecording()">Gravar</button>
+} @else {
+  <button (click)="stopRecording()">Parar</button>
+}
+
+@if (sending()) {
+  <p>Enviando...</p>
+}
+
+@if (responseUrl()) {
+  <audio [src]="responseUrl()" controls></audio>
+}

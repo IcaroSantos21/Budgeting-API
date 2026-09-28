@@ -1,0 +1,7 @@
+@if (error()) {
+  <p>{{ error() }}</p>
+} @else if (total() !== null) {
+  <p>Total: R$ {{ total() }}</p>
+} @else {
+  <p>Carregando...</p>
+}

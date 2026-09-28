@@ -1,0 +1,16 @@
+<select (change)="onCategoryChange($any($event.target).value)">
+  @for (cat of categories; track cat) {
+    <option [value]="cat">{{ cat }}</option>
+  }
+</select>
+<button (click)="search()">Buscar</button>
+
+@if (error()) {
+  <p>{{ error() }}</p>
+}
+
+<ul>
+  @for (t of transactions(); track t.id) {
+    <li>{{ t.description }} — {{ t.category }} — R$ {{ t.amount }}</li>
+  }
+</ul>
