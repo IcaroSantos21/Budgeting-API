@@ -1,17 +1,22 @@
-@if (error()) {
-  <p>{{ error() }}</p>
-}
+<h1 class="mb-6 text-2xl font-bold">Assistente por voz</h1>
 
-@if (!recording()) {
-  <button (click)="startRecording()">Gravar</button>
-} @else {
-  <button (click)="stopRecording()">Parar</button>
-}
+<div class="card flex flex-col items-center gap-4 py-10">
+  @if (!recording()) {
+    <button (click)="startRecording()" class="btn px-8 py-3">Gravar</button>
+  } @else {
+    <button (click)="stopRecording()" class="btn animate-pulse px-8 py-3">Parar</button>
+    <p class="text-sm text-zinc-500 dark:text-zinc-400">Gravando...</p>
+  }
 
-@if (sending()) {
-  <p>Enviando...</p>
-}
+  @if (sending()) {
+    <p class="text-sm text-zinc-500 dark:text-zinc-400">Processando...</p>
+  }
 
-@if (responseUrl()) {
-  <audio [src]="responseUrl()" controls></audio>
-}
+  @if (error()) {
+    <p class="text-sm text-red-600 dark:text-red-400">{{ error() }}</p>
+  }
+
+  @if (responseUrl()) {
+    <audio [src]="responseUrl()" controls class="w-full"></audio>
+  }
+</div>

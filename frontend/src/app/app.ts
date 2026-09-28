@@ -1,16 +1,39 @@
 import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import { TotalComponent } from './components/total/total';
-import { AddComponent } from './components/add/add';
-import { ListComponent } from './components/list/list';
-import { AudioComponent } from './components/audio/audio';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 @Component({
-  imports: [RouterOutlet, TotalComponent, AddComponent, ListComponent, AudioComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive],
   selector: 'app-root',
   styleUrl: './app.css',
   templateUrl: './app.html',
 })
 export class App {
-  protected readonly title = signal('frontend');
+  links = [
+    { path: '/', label: 'Dashboard' },
+    { path: '/add', label: 'Adicionar' },
+    { path: '/list', label: 'Transações' },
+    { path: '/audio', label: 'Áudio' },
+  ];
+
+  exactMatch = { exact: true };
+  activeClass = 'bg-red-600 text-white';
+  inactiveClass = 'text-zinc-600 hover:bg-red-50 dark:text-zinc-300 dark:hover:bg-zinc-800';
+
+  dark = signal(false);
+
+  constructor() {
+    const saved = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    this.setDark(saved ? saved === 'dark' : prefersDark);
+  }
+
+  toggleTheme(): void {
+    this.setDark(!this.dark());
+  }
+
+  private setDark(value: boolean): void {
+    this.dark.set(value);
+    document.documentElement.classList.toggle('dark', value);
+    localStorage.setItem('theme', value ? 'dark' : 'light');
+  }
 }

@@ -1,16 +1,28 @@
-<select (change)="onCategoryChange($any($event.target).value)">
-  @for (cat of categories; track cat) {
-    <option [value]="cat">{{ cat }}</option>
-  }
-</select>
-<button (click)="search()">Buscar</button>
+<h1 class="mb-6 text-2xl font-bold">Transações</h1>
+
+<div class="mb-4 flex gap-2">
+  <select (change)="onCategoryChange($any($event.target).value)" class="input max-w-xs">
+    @for (cat of categories; track cat) {
+      <option [value]="cat">{{ cat }}</option>
+    }
+  </select>
+  <button (click)="search()" class="btn">Buscar</button>
+</div>
 
 @if (error()) {
-  <p>{{ error() }}</p>
+  <p class="text-red-600 dark:text-red-400">{{ error() }}</p>
 }
 
-<ul>
+<ul class="space-y-2">
   @for (t of transactions(); track t.id) {
-    <li>{{ t.description }} — {{ t.category }} — R$ {{ t.amount }}</li>
+    <li class="card flex items-center justify-between p-4!">
+      <div>
+        <p class="font-medium">{{ t.description }}</p>
+        <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-950 dark:text-red-300">
+          {{ t.category }}
+        </span>
+      </div>
+      <p class="font-semibold text-red-600 dark:text-red-500">{{ formatBRL(t.amount) }}</p>
+    </li>
   }
 </ul>

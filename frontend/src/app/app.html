@@ -1,6 +1,30 @@
-<app-total></app-total>
-<app-add></app-add>
-<app-list></app-list>
-<app-audio></app-audio>
+<div class="flex min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+  <aside class="flex w-60 shrink-0 flex-col border-r border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+    <h2 class="mb-8 px-3 text-lg font-bold text-red-600 dark:text-red-500">Budgeting</h2>
 
-<router-outlet />
+    <nav class="flex flex-1 flex-col gap-1">
+      @for (link of links; track link.path) {
+        <a
+          [routerLink]="link.path"
+          routerLinkActive
+          #rla="routerLinkActive"
+          [routerLinkActiveOptions]="exactMatch"
+          class="rounded-lg px-3 py-2 text-sm font-medium transition"
+          [class]="rla.isActive ? activeClass : inactiveClass"
+        >
+          {{ link.label }}
+        </a>
+      }
+    </nav>
+
+    <button (click)="toggleTheme()" class="btn-ghost">
+      {{ dark() ? 'Tema claro' : 'Tema escuro' }}
+    </button>
+  </aside>
+
+  <main class="flex-1 p-8">
+    <div class="mx-auto max-w-3xl">
+      <router-outlet />
+    </div>
+  </main>
+</div>

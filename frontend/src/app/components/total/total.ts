@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { TransactionService } from '../../services/transaction.service';
+import { formatBRL } from '../../utils/money';
 
 @Component({
   selector: 'app-total',
@@ -19,4 +20,6 @@ export class TotalComponent implements OnInit {
       error: (err) => this.error.set('Erro ao buscar o total: ' + err.message)
     });
   }
+
+  formatBRL = formatBRL;
 }

@@ -1,6 +1,7 @@
 import { Component, signal, inject } from '@angular/core';
 import { TransactionService } from '../../services/transaction.service';
 import { Transaction, Category } from '../../models/transaction.model';
+import { formatBRL } from '../../utils/money';
 
 @Component({
   selector: 'app-list',
@@ -28,4 +29,6 @@ export class ListComponent {
       error: (err) => this.error.set('Erro ao buscar transações: ' + err.message)
     });
   }
+
+  formatBRL = formatBRL;
 }
